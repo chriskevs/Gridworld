@@ -1,6 +1,7 @@
 from __future__ import print_function
 from heapq import * #Hint: Use heappop and heappush
 
+# the actions are move right, down, left, up
 ACTIONS = [(0,1),(1,0),(0,-1),(-1,0)]
 
 class AI:
@@ -53,7 +54,7 @@ class AI:
 
     #DFS: BUGGY, fix it first
     def dfs_step(self):
-        if not self.frontier:
+        if not self.frontier: # if-statement executes if frontier is empty
             self.failed = True
             self.finished = True
             print("no path")
@@ -65,7 +66,16 @@ class AI:
             self.finished = True
             return
 
-        children = [(current[0]+a[0], current[1]+a[1]) for a in ACTIONS]
+        # the children of current are located up, down, left, and right of current
+        # the order we look at is right, down, left, and up. Coordinates are (y, x)
+        # children = [(current[0]+a[0], current[1]+a[1]) for a in ACTIONS]
+        children = []
+        for a in ACTIONS:
+            node = (current[0] + a[0], current[1]+a[1])
+            if (node not in self.explored) and (node not in self.frontier):
+                children.append(node)
+
+
         self.grid.nodes[current].color_checked = True
         self.grid.nodes[current].color_frontier = False
 
@@ -75,6 +85,8 @@ class AI:
                     self.previous[n] = current
                     self.frontier.append(n)
                     self.grid.nodes[n].color_frontier = True
+        # my code
+        self.explored.append(current)
 
     #Implement BFS here (Don't forget to implement initialization at line 23)
     def bfs_step(self):
