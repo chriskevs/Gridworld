@@ -26,7 +26,8 @@ class AI:
             self.frontier = [self.grid.start]
             self.explored = []
         elif self.type == "bfs":
-            pass
+            self.frontier = [self.grid.start]
+            self.explored = []
         elif self.type == "ucs":
             pass
         elif self.type == "astar":
@@ -67,31 +68,60 @@ class AI:
             return
 
         # the children of current are located up, down, left, and right of current
-        # the order we look at is right, down, left, and up. Coordinates are (y, x)
-        # children = [(current[0]+a[0], current[1]+a[1]) for a in ACTIONS]
-        children = []
-        for a in ACTIONS:
-            node = (current[0] + a[0], current[1]+a[1])
-            if (node not in self.explored) and (node not in self.frontier):
-                children.append(node)
+        # the order we look at is right, down, left, and up. Coordinates are (row, col)
+        children = [(current[0] + a[0], current[1] + a[1]) for a in ACTIONS]
 
-
+        # update coloring of current node
         self.grid.nodes[current].color_checked = True
         self.grid.nodes[current].color_frontier = False
 
+        # for each child of current that isn't in the explore nor frontier set,
+        # and isn't a puddle, add it to the frontier
         for n in children:
             if n[0] in range(self.grid.row_range) and n[1] in range(self.grid.col_range):
                 if not self.grid.nodes[n].puddle:
-                    self.previous[n] = current
-                    self.frontier.append(n)
-                    self.grid.nodes[n].color_frontier = True
-        # my code
+                    if (n not in self.explored) and (n not in self.frontier):
+                        self.previous[n] = current
+                        self.frontier.append(n)
+                        self.grid.nodes[n].color_frontier = True
+
+        # move current node from the frontier to the explored set
         self.explored.append(current)
 
     #Implement BFS here (Don't forget to implement initialization at line 23)
     def bfs_step(self):
-        self.failed = True
-        self.finished = True
+        if not self.frontier:
+            self.failed = True
+            self.finished = True
+            print("no path")
+            return
+        current = self.frontier.pop(0)
+
+        # Finishes search if we've found the goal.
+        if current == self.grid.goal:
+            self.finished = True
+            return
+
+        # update coloring of current node
+        children = [(current[0] + a[0], current[1] + a[1]) for a in ACTIONS]
+
+        self.grid.nodes[current].color_checked = True
+        self.grid.nodes[current].color_frontier = False
+
+        # for each child of current that isn't in the explore nor frontier set,
+        # and isn't a puddle, add it to the frontier
+        for n in children:
+            if n[0] in range(self.grid.row_range) and n[1] in range(self.grid.col_range):
+                if not self.grid.nodes[n].puddle:
+                    if (n not in self.explored) and (n not in self.frontier):
+                        self.previous[n] = current
+                        self.frontier.append(n)
+                        self.grid.nodes[n].color_frontier = True
+
+        # move current node from the frontier to the explored set
+        self.explored.append(current)
+
+
 
     #Implement UCS here (Don't forget to implement initialization at line 23)
     def ucs_step(self):
