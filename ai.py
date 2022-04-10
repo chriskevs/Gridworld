@@ -143,23 +143,24 @@ class AI:
             print("no path")
             return
 
-        path_cost, current = heappop(self.frontier)
+        curr_g, current = heappop(self.frontier)
 
         # Finishes search if we've found the goal.
         if current == self.grid.goal:
             self.finished = True
             return
 
-        # update coloring of current node
+        
         children = [(current[0] + a[0], current[1] + a[1]) for a in ACTIONS]
 
+        # update coloring of current node
         self.grid.nodes[current].color_checked = True
         self.grid.nodes[current].color_frontier = False
 
         # dictionary where key is node in frontier & value is index of node in frontier
         frontier_nodes = {}
         i = 0
-        for (cost, node) in self.frontier:
+        for (g, node) in self.frontier:
             frontier_nodes[node] = i
             i += 1
 
@@ -168,21 +169,23 @@ class AI:
             if n[0] in range(self.grid.row_range) and n[1] in range(self.grid.col_range):
                 # child is not a puddle
                 if not self.grid.nodes[n].puddle:
-                    cost = path_cost + self.grid.nodes[n].cost()
+                    # compute path cost
+                    g_cost = curr_g + self.grid.nodes[n].cost()
 
                     # child is not in explored or frontier
                     if (n not in self.explored) and (n not in frontier_nodes):
                         self.previous[n] = current
-                        heappush(self.frontier, (cost, n))
+                        heappush(self.frontier, (g_cost, n))
                         self.grid.nodes[n].color_frontier = True
                     # child is in frontier
                     elif (n in frontier_nodes):
                         index_corresp_to_n = frontier_nodes[n]
-                        old_n_pathCost = self.frontier[index_corresp_to_n][0]
+                        n_g_cost = self.frontier[index_corresp_to_n][0]
 
                         # child is in frontier with a high path cost
-                        if old_n_pathCost > cost:
-                            self.frontier[index_corresp_to_n][0] = cost
+                        if n_g_cost > g_cost:
+                            self.previous[n] = current
+                            self.frontier[index_corresp_to_n] = (g_cost, n)
                             heapify(self.frontier)
 
         # move current node from the frontier to the explored set
