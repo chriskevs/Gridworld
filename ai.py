@@ -33,7 +33,17 @@ class AI:
             heappush(self.frontier, (0, self.grid.start))
             self.explored = []
         elif self.type == "astar":
-            pass
+            self.frontier = []
+            
+            goal = self.grid.goal
+            start = self.grid.start
+            
+            # manhattan distance
+            f = abs(goal[0] - start[0]) + abs(goal[1] - start[1])
+
+            heappush(self.frontier, (f, 0, self.grid.start))
+            self.explored = []
+            
 
     def get_result(self):
         total_cost = 0
@@ -158,17 +168,17 @@ class AI:
             if n[0] in range(self.grid.row_range) and n[1] in range(self.grid.col_range):
                 # child is not a puddle
                 if not self.grid.nodes[n].puddle:
+                    cost = path_cost + self.grid.nodes[n].cost()
+
                     # child is not in explored or frontier
                     if (n not in self.explored) and (n not in frontier_nodes):
                         self.previous[n] = current
-                        cost = path_cost + self.grid.nodes[n].cost()
                         heappush(self.frontier, (cost, n))
                         self.grid.nodes[n].color_frontier = True
                     # child is in frontier
                     elif (n in frontier_nodes):
                         index_corresp_to_n = frontier_nodes[n]
                         old_n_pathCost = self.frontier[index_corresp_to_n][0]
-                        cost = path_cost + self.grid.nodes[n].cost()
 
                         # child is in frontier with a high path cost
                         if old_n_pathCost > cost:
@@ -180,5 +190,58 @@ class AI:
     
     #Implement Astar here (Don't forget to implement initialization at line 23)
     def astar_step(self):
-        self.failed = True
-        self.finished = True
+        if not self.frontier:
+            self.failed = True
+            self.finished = True
+            print("no path")
+            return
+
+        curr_f, curr_g, current = heappop(self.frontier)
+
+        # Finishes search if we've found the goal.
+        if current == self.grid.goal:
+            self.finished = True
+            return
+
+        # store children of current in a list
+        children = [(current[0] + a[0], current[1] + a[1]) for a in ACTIONS]
+
+        # update coloring of current node
+        self.grid.nodes[current].color_checked = True
+        self.grid.nodes[current].color_frontier = False
+
+        # dictionary where key is node in frontier & value is index of node in frontier list
+        frontier_nodes = {}
+        i = 0
+        for (f, g, node) in self.frontier:
+            frontier_nodes[node] = i
+            i += 1
+
+
+        for n in children:
+            if n[0] in range(self.grid.row_range) and n[1] in range(self.grid.col_range):
+                # child is not a puddle
+                if not self.grid.nodes[n].puddle:
+                    # compute total cost
+                    g_cost  = curr_g + self.grid.nodes[n].cost()
+                    heuristic = abs(self.grid.goal[0] - n[0]) + abs(self.grid.goal[1] - n[1])
+                    f_cost =  g_cost + heuristic
+
+                    # child is not in explored or frontier
+                    if (n not in self.explored) and (n not in frontier_nodes):
+                        self.previous[n] = current
+                        heappush(self.frontier, (f_cost, g_cost, n))
+                        self.grid.nodes[n].color_frontier = True
+                    # child is in frontier
+                    elif (n in frontier_nodes):
+                        index_corresp_to_n = frontier_nodes[n]
+                        n_f_cost = self.frontier[index_corresp_to_n][0]
+
+                        # child is in frontier with a high path cost
+                        if n_f_cost > f_cost:
+                            self.previous[n] = current
+                            self.frontier[index_corresp_to_n] = (f_cost, g_cost, n)
+                            heapify(self.frontier)
+
+        # move current node from the frontier to the explored set
+        self.explored.append(current)
